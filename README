@@ -1,0 +1,55 @@
+OAI to RDF mapping
+==================
+
+Last updated: Mar 10, 2005
+
+Requirements:
+==========================
+
+	* SWI-Prolog 5.5.10
+	* Triple20 (CVS version, see
+	  http://www.swi-prolog.org/packages/Triple20
+
+Installation
+============
+
+[still very much `development']
+
+	* On Unix, edit #!... line in run.pl to point to Prolog
+	* In load.pl, edit file_search_path to reflect location of
+	  Triple20 sources.
+	* In oai.pl, add identifiers and URLs of servers you wan to
+	  access.
+
+Running (example uses fontys):
+
+	* Start run.pl
+	* To get server identifier, run
+
+		?- sp(fontys).
+
+	* To get records
+
+		?- gr(fontys).
+
+	* To start Triple20 in environment, so you can examine the
+	loaded data:
+
+		?- triple20.
+
+	* To generate an RDF file:
+
+		?- rdf_save('fontys.rdf', fontys).
+
+Roadmap
+=======
+
+	run.pl		Toplevel driver
+	load.pl		load the components
+	oai.pl		AOI HTTP client, calling user hook to process
+			OAI content.
+	oairdf.pl	Uses oai.pl, providing a hook to translate into RDF
+	t20_extensions.pl	Define some extensions to Triple20
+	oai.rdfs	RDFS description of AOI records (partial) used to
+			guide translation.
+			

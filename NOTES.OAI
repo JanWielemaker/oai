@@ -1,0 +1,59 @@
+OAI: Open Archive Initiative
+
+Protocol specification: http://www.openarchives.org/OAI/openarchivesprotocol.html
+Browse sites: http://www.openarchives.org/Register/BrowseSites
+
+
+Basics:	HTTP+XML
+
+Basic entities:
+===============
+	
+	* Identifier		(= resource)
+	* Record		(= resource metadata)
+	* Set			(= collection)
+
+Operations (=verb)
+==================
+
+	* GetRecord
+	Identifier --> Record
+
+	* Identify
+	Learn about repository
+
+	* ListIdentifiers
+	Get identifiers from search specification
+
+	* ListMetadataFormats
+	List available record formats, represented as an XML schema.  Possibly
+	for a specific record
+
+	* ListRecords
+	Similar to ListIdentifiers, but also fetches the actual data
+
+	* ListSets
+	Lists the available sets, basically repositories and info on them
+	(Dublin core).  Can be used in ListIdentifiers and ListRecords
+
+Protocol Properties
+====================
+
+	* There is no search.  Only enumeration of identifiers/records with
+	  as only criteria "set", "from" and "until".  This allows for 
+	  incremental mirroring, but *not* for interactive search.
+
+Problems
+========
+
+	* Metadata is based on XML-Schema, the basic schema is Unqualified
+	Dublin Core.
+
+================================================================
+Approach
+================================================================
+
+	* Map repository to an OWL ontology.
+		- Ontology meta-data based on 'Identify'
+		- Allow transferring the repository
+		- Allow updating the repository
