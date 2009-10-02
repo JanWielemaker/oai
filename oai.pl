@@ -16,13 +16,16 @@ oai_server(igem,     'http://igem.adlibsoft.com/wwwopac.exe').
 oai_server(citeseer, 'http://cs1.ist.psu.edu/cgi-bin/oai.cgi').
 oai_server(fontys,   'http://www.fontyspublicaties.nl/oai/pub.fontys.nl.cgi').
 oai_server(svcn,     'http://62.221.199.220:26006/').
+oai_server(scran,    'http://www.scran.ac.uk/xmlrpc/oai/oai2.php').
+oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
+
 
 		 /*******************************
 		 *	      ACTIONS		*
 		 *******************************/
 
 %	oai_list_records(+Server, +Verb, :Handler, +Options)
-%	
+%
 %	Run Verb on Server. If the response is a list (all List* verbs),
 %	Handler is called for each element in the response. Otherwise it
 %	is  called  for  the  response  as  a  whole.  Options  provides
@@ -34,7 +37,7 @@ oai_request(Server, Verb, Handler0, Options) :-
 	oai_attributes(Options, Fields, RestOptions),
 	make_url(Server, Verb, Fields, ParsedURL),
 	request(ParsedURL, Verb, Handler, RestOptions).
-	
+
 request(ParsedURL, Verb, Handler, RestOptions0) :-
 	(   select(resume(Resume), RestOptions0, RestOptions)
 	->  true
@@ -57,7 +60,7 @@ request(ParsedURL, Verb, Handler, RestOptions0) :-
 	->  throw(error(oai(Verb, Error), _))
 	;   throw(error(oai(unknown_reply), _))
 	).
-	
+
 handle_content(Elem, Verb, Handler, ResumptionToken) :-
 	oai_verb(Verb, ContentElem),
 	ContentElem \== self, !,
@@ -77,7 +80,7 @@ handle_content_parts([element(_:resumptionToken,_,[RT1])|T], E, H, _, RT) :- !,
 handle_content_parts([Error|T], E, H, RT0, RT) :-
 	print_message(warning, oai(skipped(Error))),
 	handle_content_parts(T, E, H, RT0, RT).
-	
+
 match_element(element(_:E, _, _), E) :- !.
 match_element(element(E, _, _), E).
 
@@ -105,7 +108,7 @@ oai_server_address(Server, _) :-
 	throw(error(existence_error(server, Server), _)).
 
 %	resumption_url(+Parsed, +ResumptionToken, -ResumptionURL)
-%	
+%
 %	Replace or add the resumptionToken argument of the URL.
 
 resumption_url(ParsedURL, ResumptionToken, NewURL) :-
@@ -126,7 +129,7 @@ resumption_url(ParsedURL, ResumptionToken, NewURL) :-
 		 *******************************/
 
 %	oai_attributes(+Options, -OAIArguments, -RestOptions
-%	
+%
 %	Split options in OAI  HTTP  request   arguments  and  the  rest.
 %	OAIArguments is of the form   Name=Value, while RestOptions uses
 %	the Name(Value) convention.
@@ -144,7 +147,7 @@ oai_attributes([H|T0], A, [H|T]) :-
 
 
 %	oai_attribute(?Name)
-%	
+%
 %	Enumerate the OAI attributes.
 
 oai_attribute(from).

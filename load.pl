@@ -1,11 +1,10 @@
-file_search_path(triple20, '/staff/jan/src/Triple20/src').
+file_search_path(triple20, '/home/janw/src/eculture/triple20/src').
 file_search_path(triple20, '/soft/swi-prolog-dev/triple20/src').
-file_search_path(serql, '../../../ClioPatria/SeRQL/lib/semweb').
 
 
 :- load_files([ triple20(load),		% Use Triple20 for vizualisation
-		serql(rdf_portray),
 					% Get this in 'user'
+		library(semweb/rdf_portray),
 		library('semweb/rdf_db'),
 		library('semweb/rdfs'),
 					% The real stuff
