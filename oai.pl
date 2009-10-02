@@ -52,8 +52,8 @@ request(ParsedURL, Verb, Handler, RestOptions0) :-
 	    term_member(Elem, XML)
 	->  handle_content(Elem, Verb, Handler, ResumptionToken),
 	    (	ResumptionToken \== [], Resume \== false
-	    ->	resumption_url(ParsedURL, ResumptionToken, Resume),
-		request(Resume, Verb, Handler, RestOptions)
+	    ->	resumption_url(ParsedURL, ResumptionToken, ResumeURL),
+		request(ResumeURL, Verb, Handler, RestOptions)
 	    ;	true
 	    )
 	;   term_member(element(_:error, _, Error), XML)
