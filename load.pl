@@ -1,4 +1,4 @@
-file_search_path(triple20, '/home/janw/src/eculture/triple20/src').
+file_search_path(triple20, '../../../eculture/triple20/src').
 file_search_path(triple20, '/soft/swi-prolog-dev/triple20/src').
 
 
