@@ -2,9 +2,11 @@
 	  [ oai_request/4,		% +Server, +Verb, :Handler, +Options
 	    oai_server_address/2	% +Id, -URL
 	  ]).
-:- use_module(library('http/http_client')).
-:- use_module(library('http/http_sgml_plugin')).
+:- use_module(library(http/http_client)).
+:- use_module(library(http/http_sgml_plugin)).
 :- use_module(library(debug)).
+:- use_module(library(option)).
+:- use_module(library(lists)).
 
 :- meta_predicate oai_request(+, +, :, +).
 
@@ -24,26 +26,20 @@ oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 		 *	      ACTIONS		*
 		 *******************************/
 
-%	oai_list_records(+Server, +Verb, :Handler, +Options)
+%%	oai_list_records(+Server, +Verb, :Handler, +Options)
 %
 %	Run Verb on Server. If the response is a list (all List* verbs),
 %	Handler is called for each element in the response. Otherwise it
 %	is  called  for  the  response  as  a  whole.  Options  provides
 %	additional options for the OAI HTTP request.
 
-oai_request(Server, Verb, Handler0, Options) :-
-	strip_module(Handler0, Context, Goal),
-	Handler = Context:Goal,
+oai_request(Server, Verb, Handler, Options) :-
 	oai_attributes(Options, Fields, RestOptions),
 	make_url(Server, Verb, Fields, ParsedURL),
 	request(ParsedURL, Verb, Handler, RestOptions).
 
 request(ParsedURL, Verb, Handler, RestOptions0) :-
-	(   select(resume(Resume), RestOptions0, RestOptions)
-	->  true
-	;   Resume = true,
-	    RestOptions = RestOptions0
-	),
+	select_option(resume(Resume), RestOptions0, RestOptions, true),
 	parse_url(FullURL, ParsedURL),
 	debug(oai, 'Opening ~w ...', [FullURL]),
 	http_get(ParsedURL, XML, [space(remove)|RestOptions]),
@@ -89,7 +85,7 @@ match_element(element(E, _, _), E).
 		 *	   URI HANDLING		*
 		 *******************************/
 
-%	make_url(+Server, +Verb, +ExtraFields, -ParsedURL)
+%%	make_url(+Server, +Verb, +ExtraFields, -ParsedURL)
 
 make_url(Server, Verb, Fields, All) :-
 	oai_server_address(Server, BaseURL),
@@ -103,20 +99,16 @@ make_url(Server, Verb, Fields, All) :-
 oai_server_address(Name, Server) :-
 	oai_server(Name, Server), !.
 oai_server_address(Server, Server) :-
-	sub_atom(Server, 0, _, _, 'http'), !.
+	sub_atom(Server, 0, _, _, 'http://'), !.
 oai_server_address(Server, _) :-
 	throw(error(existence_error(server, Server), _)).
 
-%	resumption_url(+Parsed, +ResumptionToken, -ResumptionURL)
+%%	resumption_url(+Parsed, +ResumptionToken, -ResumptionURL)
 %
 %	Replace or add the resumptionToken argument of the URL.
 
 resumption_url(ParsedURL, ResumptionToken, NewURL) :-
 	select(search(Search0), ParsedURL, URL1),
-%	(   select(resumptionToken(_), Search0, Search1)
-%	->  Search = [resumptionToken(ResumptionToken)|Search1]
-%	;   Search = [resumptionToken(ResumptionToken)|Search0]
-%	),
 	memberchk(verb=Verb, Search0),
 	Search = [ resumptionToken = ResumptionToken,
 		   verb = Verb
@@ -128,7 +120,7 @@ resumption_url(ParsedURL, ResumptionToken, NewURL) :-
 		 *	     OPTIONS		*
 		 *******************************/
 
-%	oai_attributes(+Options, -OAIArguments, -RestOptions
+%%	oai_attributes(+Options, -OAIArguments, -RestOptions
 %
 %	Split options in OAI  HTTP  request   arguments  and  the  rest.
 %	OAIArguments is of the form   Name=Value, while RestOptions uses
@@ -146,7 +138,7 @@ oai_attributes([H|T0], A, [H|T]) :-
 	oai_attributes(T0, A, T).
 
 
-%	oai_attribute(?Name)
+%%	oai_attribute(?Name)
 %
 %	Enumerate the OAI attributes.
 
@@ -157,7 +149,7 @@ oai_attribute(resumptionToken).
 oai_attribute(metadataPrefix).
 
 
-%	oai_verb(+Verb, -ContentPart)
+%%	oai_verb(+Verb, -ContentPart)
 
 oai_verb('GetRecord',		self).
 oai_verb('Identify',		self).
