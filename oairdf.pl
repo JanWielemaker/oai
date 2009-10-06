@@ -127,6 +127,7 @@ fetch_record_loop(Count, Server, Out, Options) :-
 			  ]),
 	comment(Out, Options, Options1),
 	rdf_save_turtle(Out, [ graph(tmp) ]),
+	flush_output(Out),
 	(   NextToken == []
 	->  true
 	;   C2 is Count - 1,
