@@ -90,11 +90,15 @@ on_metadata(ServerURL, DB, XML) :-
 %	Collects all records from Server into File. Some useful options:
 %
 %	    * retry(+Times)
-%	    Retry the fetch max Times.  Default is 5.
+%	    Retry the fetch max Times.  Default is 200.
 %
 %	    * retry_delay(+Seconds)
 %	    Time to wait for the first retry.  Default is 10 seconds.
-%	    For subsequent retries, the time is doubled each try.
+%	    For subsequent retries, the time is doubled each try. until
+%	    it reaches =retry_maxdelay=
+%
+%	    * retry_maxdelay(+Seconds)
+%	    Maximum delay between retries.  Default is 3600.
 %
 %	    * resumption_count(+Count)
 %	    Do at most Count resumptions.  Default is infinite.
@@ -146,10 +150,11 @@ retry_oai_records(Try, Server, DB, Options) :-
 		fail
 	    )
 	->  true
-	;   option(retry(MaxRetry), Options, 5),
+	;   option(retry(MaxRetry), Options, 100),
 	    Try < MaxRetry
-	->  option(retry_delay(Delay0), Options),
-	    Delay is Delay0 * (2**(Try-1)),
+	->  option(retry_delay(Delay0), Options, 10),
+	    option(retry_maxdelay(MaxDelay), Options, 3600),
+	    Delay is max(MaxDelay, Delay0 * (2**(Try-1))),
 	    debug(oai, 'Retrying in ~D seconds ...', [Delay]),
 	    sleep(Delay),
 	    Retry is Try + 1,
