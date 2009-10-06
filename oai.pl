@@ -24,7 +24,7 @@ oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 		 *	      ACTIONS		*
 		 *******************************/
 
-%	oai_list_records(+Server, +Verb, :Handler, +Options)
+%%	oai_list_records(+Server, +Verb, :Handler, +Options)
 %
 %	Run Verb on Server. If the response is a list (all List* verbs),
 %	Handler is called for each element in the response. Otherwise it
@@ -49,14 +49,14 @@ request(ParsedURL, Verb, Handler, RestOptions0) :-
 	http_get(ParsedURL, XML, [space(remove)|RestOptions]),
 	debug(oai, 'Processing reply ...', []),
 	(   Elem = element(_:Verb, _, _),
-	    term_member(Elem, XML)
+	    sub_term(Elem, XML)
 	->  handle_content(Elem, Verb, Handler, ResumptionToken),
 	    (	ResumptionToken \== [], Resume \== false
 	    ->	resumption_url(ParsedURL, ResumptionToken, ResumeURL),
 		request(ResumeURL, Verb, Handler, RestOptions)
 	    ;	true
 	    )
-	;   term_member(element(_:error, _, Error), XML)
+	;   sub_term(element(_:error, _, Error), XML)
 	->  throw(error(oai(Verb, Error), _))
 	;   throw(error(oai(unknown_reply), _))
 	).
@@ -89,7 +89,7 @@ match_element(element(E, _, _), E).
 		 *	   URI HANDLING		*
 		 *******************************/
 
-%	make_url(+Server, +Verb, +ExtraFields, -ParsedURL)
+%%	make_url(+Server, +Verb, +ExtraFields, -ParsedURL)
 
 make_url(Server, Verb, Fields, All) :-
 	oai_server_address(Server, BaseURL),
@@ -107,7 +107,7 @@ oai_server_address(Server, Server) :-
 oai_server_address(Server, _) :-
 	throw(error(existence_error(server, Server), _)).
 
-%	resumption_url(+Parsed, +ResumptionToken, -ResumptionURL)
+%%	resumption_url(+Parsed, +ResumptionToken, -ResumptionURL)
 %
 %	Replace or add the resumptionToken argument of the URL.
 
@@ -128,7 +128,7 @@ resumption_url(ParsedURL, ResumptionToken, NewURL) :-
 		 *	     OPTIONS		*
 		 *******************************/
 
-%	oai_attributes(+Options, -OAIArguments, -RestOptions
+%%	oai_attributes(+Options, -OAIArguments, -RestOptions
 %
 %	Split options in OAI  HTTP  request   arguments  and  the  rest.
 %	OAIArguments is of the form   Name=Value, while RestOptions uses
@@ -146,7 +146,7 @@ oai_attributes([H|T0], A, [H|T]) :-
 	oai_attributes(T0, A, T).
 
 
-%	oai_attribute(?Name)
+%%	oai_attribute(?Name)
 %
 %	Enumerate the OAI attributes.
 
@@ -157,7 +157,7 @@ oai_attribute(resumptionToken).
 oai_attribute(metadataPrefix).
 
 
-%	oai_verb(+Verb, -ContentPart)
+%%	oai_verb(+Verb, -ContentPart)
 
 oai_verb('GetRecord',		self).
 oai_verb('Identify',		self).
@@ -166,15 +166,6 @@ oai_verb('ListMetadataFormats',	metadataFormat).
 oai_verb('ListRecords',		record).
 oai_verb('ListSets',		set).
 
-		 /*******************************
-		 *	       UTIL		*
-		 *******************************/
-
-term_member(X, X).
-term_member(X, Term) :-
-	compound(Term),
-	arg(_, Term, Arg),
-	term_member(X, Arg).
 
 
 		 /*******************************
