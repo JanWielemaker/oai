@@ -6,12 +6,12 @@
 
 sp(Server) :-
 	oai_server_properties(Server, Server).
+
 gr(Server) :-
 	oai_records(Server, Server,
-		    [ metadataPrefix=oai_dc
+		    [
 		    ]).
 gr1(Server) :-
 	oai_records(Server, Server,
-		    [ metadataPrefix=oai_dc,
-		      resume(false)
+		    [ resume(false)
 		    ]).

@@ -5,11 +5,15 @@
 	    oai_sets/2,			% +ServerID, +DB
 	    oai_metadata/2,		% +ServerID, +DB
 
-	    oai_records/3		% +ServerID, +DB, +Options
+	    oai_records/3,		% +ServerID, +DB, +Options
+	    oai_crawl/3,		% +ServerID, +File, +Options
+
+	    oai_reset_warnings/0
 	  ]).
 :- use_module(oai).
-:- use_module(library('semweb/rdf_db')).
-:- use_module(library('semweb/rdfs')).
+:- use_module(library(semweb/rdf_db)).
+:- use_module(library(semweb/rdfs)).
+:- use_module(library(semweb/rdf_turtle_write)).
 :- use_module(library(debug)).
 
 :- multifile
@@ -35,7 +39,6 @@ Translation of OAI server into an RDF database
 %	Get information about the server
 
 oai_server_properties(ServerID, DB) :-
-	reset_warnings,
 	try(oai_identify(ServerID, DB)),
 	try(oai_sets(ServerID, DB)),
 	try(oai_metadata(ServerID, DB)),
@@ -82,8 +85,91 @@ on_metadata(ServerURL, DB, XML) :-
 	rdf_assert(MDF, oai:server, ServerURL, DB),
 	set_properties(MDF, XML, DB).
 
-oai_records(ServerId, DB, Options) :-
-	reset_warnings,
+%%	oai_crawl(+Server, +File, +Options)
+%
+%	Collects all records from Server into File. Some useful options:
+%
+%	    * retry(+Times)
+%	    Retry the fetch max Times.  Default is 5.
+%
+%	    * retry_delay(+Seconds)
+%	    Time to wait between retries.  Default is 10 seconds.
+%
+%	    * resumption_count(+Count)
+%	    Do at most Count resumptions.  Default is infinite.
+%
+%	    * metadataPrefix(+Prefix)
+%	    Meta-data format to collect.  Default is =oai_dc=.
+%
+%	    * resumptionToken(+Token)
+%	    Start from the given resumption token
+%
+%	    * set(+Set)
+%	    Specify a dataset
+%
+%	    * from(+From)
+%	    * until(+Until)
+%	    FIXME: OAI attributes; what do they do?
+
+oai_crawl(Server, File, Options) :-
+	select_option(resumption_count(Count), Options, Options1, -1),
+	setup_call_cleanup(open(File, write, Out, [encoding(utf8)]),
+			   fetch_record_loop(Count, Server, Out, Options1),
+			   close(Out)).
+
+fetch_record_loop(0, _, _, _) :- !.
+fetch_record_loop(Count, Server, Out, Options) :-
+	rdf_retractall(_,_,_,tmp),
+	option(retry(Retry), Options, 5),
+	retry_oai_records(Retry, Server, tmp,
+			  [ next_resumption_token(NextToken)
+			  | Options
+			  ]),
+	comment(Out, Options, Options1),
+	rdf_save_turtle(Out, [ graph(tmp) ]),
+	(   NextToken == []
+	->  true
+	;   C2 is Count - 1,
+	    fetch_record_loop(C2, Server, Out,
+			      [ resumptionToken(NextToken)
+			      | Options1
+			      ])
+	).
+
+
+retry_oai_records(MaxRetries, Server, DB, Options) :-
+	(   catch(oai_records(Server, DB, Options), E, true),
+	    (   var(E)
+	    ->	true
+	    ;	print_message(error, E),
+		fail
+	    )
+	->  true
+	;   MaxRetries > 1
+	->  option(retry_delay(Delay), Options),
+	    debug(oai, 'Retrying in ~D seconds ...', [Delay]),
+	    sleep(Delay),
+	    R2 is MaxRetries - 1,
+	    retry_oai_records(R2, Server, DB, Options)
+	).
+
+
+comment(Out, Options0, Options) :-
+	get_time(Now),
+	format_time(Out, '# Downloaded: %+\n', Now),
+	(   select_option(resumptionToken(Token), Options0, Options)
+	->  format(Out,  '# OAI resumptionToken: ~w~n~n', [Token])
+	;   Options = Options0
+	).
+
+
+%%	oai_records(+ServerId, +Graph, +Options)
+%
+%	Fetch OAI records from ServerId into   the  given named Graph of
+%	the RDF database.
+
+oai_records(ServerId, DB, Options0) :-
+	merge_options(Options0, [ metadataPrefix(oai_dc) ], Options),
 	oai_server_address(ServerId, ServerURL),
 	oai_request(ServerURL, 'ListRecords',
 		    on_record(ServerURL, DB), Options),
@@ -168,7 +254,11 @@ map_property(_Subject, Prop, Prop, Literal) :-
 	    assert(warned_prop(Prop))
 	).
 
-reset_warnings :-
+%%	oai_reset_warnings
+%
+%	Reset warnings that are already given
+
+oai_reset_warnings :-
 	retractall(warned_prop(_)).
 
 
