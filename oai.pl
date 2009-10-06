@@ -2,9 +2,11 @@
 	  [ oai_request/4,		% +Server, +Verb, :Handler, +Options
 	    oai_server_address/2	% +Id, -URL
 	  ]).
-:- use_module(library('http/http_client')).
-:- use_module(library('http/http_sgml_plugin')).
+:- use_module(library(http/http_client)).
+:- use_module(library(http/http_sgml_plugin)).
 :- use_module(library(debug)).
+:- use_module(library(option)).
+:- use_module(library(lists)).
 
 :- meta_predicate oai_request(+, +, :, +).
 
@@ -31,19 +33,13 @@ oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 %	is  called  for  the  response  as  a  whole.  Options  provides
 %	additional options for the OAI HTTP request.
 
-oai_request(Server, Verb, Handler0, Options) :-
-	strip_module(Handler0, Context, Goal),
-	Handler = Context:Goal,
+oai_request(Server, Verb, Handler, Options) :-
 	oai_attributes(Options, Fields, RestOptions),
 	make_url(Server, Verb, Fields, ParsedURL),
 	request(ParsedURL, Verb, Handler, RestOptions).
 
 request(ParsedURL, Verb, Handler, RestOptions0) :-
-	(   select(resume(Resume), RestOptions0, RestOptions)
-	->  true
-	;   Resume = true,
-	    RestOptions = RestOptions0
-	),
+	select_option(resume(Resume), RestOptions0, RestOptions, true),
 	parse_url(FullURL, ParsedURL),
 	debug(oai, 'Opening ~w ...', [FullURL]),
 	http_get(ParsedURL, XML, [space(remove)|RestOptions]),
@@ -103,7 +99,7 @@ make_url(Server, Verb, Fields, All) :-
 oai_server_address(Name, Server) :-
 	oai_server(Name, Server), !.
 oai_server_address(Server, Server) :-
-	sub_atom(Server, 0, _, _, 'http'), !.
+	sub_atom(Server, 0, _, _, 'http://'), !.
 oai_server_address(Server, _) :-
 	throw(error(existence_error(server, Server), _)).
 
@@ -113,10 +109,6 @@ oai_server_address(Server, _) :-
 
 resumption_url(ParsedURL, ResumptionToken, NewURL) :-
 	select(search(Search0), ParsedURL, URL1),
-%	(   select(resumptionToken(_), Search0, Search1)
-%	->  Search = [resumptionToken(ResumptionToken)|Search1]
-%	;   Search = [resumptionToken(ResumptionToken)|Search0]
-%	),
 	memberchk(verb=Verb, Search0),
 	Search = [ resumptionToken = ResumptionToken,
 		   verb = Verb

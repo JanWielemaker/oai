@@ -31,7 +31,7 @@ Translation of OAI server into an RDF database
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 %	oai_server_properties(+ServerID, +DB)
-%	
+%
 %	Get information about the server
 
 oai_server_properties(ServerID, DB) :-
@@ -105,7 +105,7 @@ on_record(ServerURL, DB,
 	),
 	forall(element(metadata, Content, element(_, _, [MD])),
 	       set_properties(URL, MD, DB)).
-	
+
 element(Name, Content, Element) :-
 	member(Element, Content),
 	match_element(Element, Name).
@@ -142,7 +142,7 @@ make_value([], [Value], Literal, literal(Value), _) :-
 	rdf_equal(rdfs:'Literal', Literal), !.
 make_value([xml:lang=Lang], [Value], Literal, literal(lang(Lang, Value)), _) :-
 	rdf_equal(rdfs:'Literal', Literal), !.
-make_value(_, Content, XMLLiteral, literal(Content), _) :-
+make_value(_, Content, XMLLiteral, literal(type(XMLLiteral, Content)), _) :-
 	rdf_equal(rdfs:'XMLLiteral', XMLLiteral), !.
 make_value(Attrs, Content, Type, ValueURL, DB) :-
 	rdf_bnode(ValueURL),
