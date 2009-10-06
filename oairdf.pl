@@ -93,7 +93,8 @@ on_metadata(ServerURL, DB, XML) :-
 %	    Retry the fetch max Times.  Default is 5.
 %
 %	    * retry_delay(+Seconds)
-%	    Time to wait between retries.  Default is 10 seconds.
+%	    Time to wait for the first retry.  Default is 10 seconds.
+%	    For subsequent retries, the time is doubled each try.
 %
 %	    * resumption_count(+Count)
 %	    Do at most Count resumptions.  Default is infinite.
@@ -120,8 +121,7 @@ oai_crawl(Server, File, Options) :-
 fetch_record_loop(0, _, _, _) :- !.
 fetch_record_loop(Count, Server, Out, Options) :-
 	rdf_retractall(_,_,_,tmp),
-	option(retry(Retry), Options, 5),
-	retry_oai_records(Retry, Server, tmp,
+	retry_oai_records(1, Server, tmp,
 			  [ next_resumption_token(NextToken)
 			  | Options
 			  ]),
@@ -138,7 +138,7 @@ fetch_record_loop(Count, Server, Out, Options) :-
 	).
 
 
-retry_oai_records(MaxRetries, Server, DB, Options) :-
+retry_oai_records(Try, Server, DB, Options) :-
 	(   catch(oai_records(Server, DB, Options), E, true),
 	    (   var(E)
 	    ->	true
@@ -146,12 +146,14 @@ retry_oai_records(MaxRetries, Server, DB, Options) :-
 		fail
 	    )
 	->  true
-	;   MaxRetries > 1
-	->  option(retry_delay(Delay), Options),
+	;   option(retry(MaxRetry), Options, 5),
+	    Try < MaxRetry
+	->  option(retry_delay(Delay0), Options),
+	    Delay is Delay0 * (2**(Try-1)),
 	    debug(oai, 'Retrying in ~D seconds ...', [Delay]),
 	    sleep(Delay),
-	    R2 is MaxRetries - 1,
-	    retry_oai_records(R2, Server, DB, Options)
+	    Retry is Try + 1,
+	    retry_oai_records(Retry, Server, DB, Options)
 	).
 
 
