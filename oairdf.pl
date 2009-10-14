@@ -154,7 +154,7 @@ retry_oai_records(Try, Server, DB, Options) :-
 	    Try < MaxRetry
 	->  option(retry_delay(Delay0), Options, 10),
 	    option(retry_maxdelay(MaxDelay), Options, 3600),
-	    Delay is max(MaxDelay, Delay0 * (2**(Try-1))),
+	    Delay is min(MaxDelay, Delay0 * (2**(Try-1))),
 	    debug(oai, 'Retrying in ~D seconds ...', [Delay]),
 	    sleep(Delay),
 	    Retry is Try + 1,
