@@ -69,7 +69,7 @@ request(ParsedURL, Verb, Handler, Options0) :-
 	    )
 	;   sub_term(element(_:error, _, Error), XML)
 	->  throw(error(oai(Verb, Error), _))
-	;   throw(error(oai(unknown_reply), _))
+	;   throw(error(oai(unknown_reply, XML), _))
 	).
 
 handle_content(Elem, Verb, Handler, ResumptionToken) :-

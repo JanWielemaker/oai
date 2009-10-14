@@ -146,7 +146,7 @@ retry_oai_records(Try, Server, DB, Options) :-
 	(   catch(oai_records(Server, DB, Options), E, true),
 	    (   var(E)
 	    ->	true
-	    ;	print_message(error, E),
+	    ;	report_error(E),
 		fail
 	    )
 	->  true
@@ -160,6 +160,15 @@ retry_oai_records(Try, Server, DB, Options) :-
 	    Retry is Try + 1,
 	    retry_oai_records(Retry, Server, DB, Options)
 	).
+
+
+report_error(E) :-
+	print_message(error, E),
+	open('oai-crawl-errors.txt', append, Out, [encoding(utf8)]),
+	get_time(Now),
+	format_time(string(Date), '%+', Now),
+	format(Out, '~N~n% ~s~n~q.~n', [Date, E]),
+	close(Out).
 
 
 comment(Out, Options0, Options) :-
