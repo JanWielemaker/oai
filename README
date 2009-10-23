@@ -94,6 +94,9 @@ to inspect the contents using the Triple20 ontology browser.
   * [[triple20/0]]
   * [[turtle/1]]
 
+---+++ Customization predicates
+
+  * [[oai_server/2]]
 
 ---++ Roadmap
 

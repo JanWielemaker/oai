@@ -9,19 +9,9 @@
 :- use_module(library(lists)).
 :- use_module(library(url)).
 :- use_module(library(occurs)).
+:- use_module(servers).
 
 :- meta_predicate oai_request(+, +, 1, +).
-
-:- multifile oai_server/2.
-:- dynamic   oai_server/2.
-
-oai_server(den,      'http://erfgoed.medialab.nl/OAI/Igor-oai.asp').
-oai_server(igem,     'http://igem.adlibsoft.com/wwwopac.exe').
-oai_server(citeseer, 'http://cs1.ist.psu.edu/cgi-bin/oai.cgi').
-oai_server(fontys,   'http://www.fontyspublicaties.nl/oai/pub.fontys.nl.cgi').
-oai_server(svcn,     'http://62.221.199.220:26006/').
-oai_server(scran,    'http://www.scran.ac.uk/xmlrpc/oai/oai2.php').
-oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 
 
 		 /*******************************
