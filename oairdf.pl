@@ -220,11 +220,12 @@ ensure_directory(Dir) :-
 	make_directory(Dir).
 
 crawl_set(ServerID, Dir, Set, Options) :-
-	atomic_list_concat([Dir, /, Set, '.ttl'], File),
+	rdf(Set, oai:setName, literal(SetName)),
+	atomic_list_concat([Dir, /, SetName, '.ttl'], File),
 	(   option(if(not_exists), Options),
 	    exists_file(File)
-	->  print_message(informational, oai(skipped(exists, Set)))
-	;   oai_crawl(ServerID, File, [set(Set)|Options])
+	->  print_message(informational, oai(skipped(exists, Options)))
+	;   oai_crawl(ServerID, File, [set(Options)|Options])
 	).
 
 
@@ -270,36 +271,50 @@ match_element(element(Name, _, _), Name).
 		 *******************************/
 
 set_properties(URL, element(_, Attrs, Content), DB) :-
-	setp_from_attributes(Attrs, URL, DB),
-	setp_from_content(Content, URL, DB).
+	set_properties(URL, element(_, Attrs, Content), -, DB).
 
-setp_from_attributes([], _, _).
-setp_from_attributes([AttName=Value|T], URL, DB) :-
+set_properties(URL, element(_, Attrs, Content), Lang, DB) :-
+	setp_from_attributes(Attrs, URL, Lang, Lang1, DB),
+	setp_from_content(Content, URL, Lang1, DB).
+
+setp_from_attributes([], _, Lang, Lang, _).
+setp_from_attributes([xmlns:_=_|T], URL, Lang0, Lang, DB) :- !,
+	setp_from_attributes(T, URL, Lang0, Lang, DB).
+setp_from_attributes([xmlns=_|T], URL, Lang0, Lang, DB) :- !,
+	setp_from_attributes(T, URL, Lang0, Lang, DB).
+setp_from_attributes([xml:_=_|T], URL, Lang0, Lang, DB) :- !,
+	setp_from_attributes(T, URL, Lang0, Lang, DB).
+setp_from_attributes([AttName=Value|T], URL, Lang0, Lang, DB) :-
 	to_atom(AttName, Prop0),
 	map_property(URL, Prop0, Prop, _Type),
-	rdf_assert(URL, Prop, literal(Value), DB),
-	setp_from_attributes(T, URL, DB).
+	(   Lang0 == ''
+	->  rdf_assert(URL, Prop, literal(Value), DB)
+	;   rdf_assert(URL, Prop, literal(lang(Lang0, Value)), DB)
+	),
+	setp_from_attributes(T, URL, Lang0, Lang, DB).
 
-setp_from_content([], _, _).
-setp_from_content([element(EName, AL, CL)|T], URL, DB) :-
+setp_from_content([], _, _, _).
+setp_from_content([element(EName, AL, CL)|T], URL, Lang, DB) :-
 	to_atom(EName, Prop0),
 	map_property(URL, Prop0, Prop, Type),
-	make_value(AL, CL, Type, Value, DB),
+	make_value(AL, CL, Type, Value, Lang, DB),
 	rdf_assert(URL, Prop, Value, DB),
-	setp_from_content(T, URL, DB).
+	setp_from_content(T, URL, Lang, DB).
 
 
-make_value([], [Value], Literal, literal(Value), _) :-
+make_value([], [Value], Literal, literal(Value), '', _) :- !,
 	rdf_equal(rdfs:'Literal', Literal), !.
-make_value([xml:lang=Lang], [Value], Literal, literal(lang(Lang, Value)), _) :-
+make_value([], [Value], Literal, literal(lang(Lang, Value)), Lang, _) :- !,
 	rdf_equal(rdfs:'Literal', Literal), !.
-make_value(_, Content, XMLLiteral, literal(type(XMLLiteral, Content)), _) :-
+make_value([xml:lang=Lang], [Value], Literal, literal(lang(Lang, Value)), _, _) :-
+	rdf_equal(rdfs:'Literal', Literal), !.
+make_value(_, Content, XMLLiteral, literal(type(XMLLiteral, Content)), _, _) :-
 	rdf_equal(rdfs:'XMLLiteral', XMLLiteral), !.
-make_value(Attrs, Content, Type, ValueURL, DB) :-
+make_value(Attrs, Content, Type, ValueURL, Lang, DB) :-
 	rdf_bnode(ValueURL),
 	rdf_assert(ValueURL, rdf:type, Type, DB),
-	setp_from_attributes(Attrs, ValueURL, DB),
-	setp_from_content(Content, ValueURL, DB).
+	setp_from_attributes(Attrs, ValueURL, Lang, Lang1, DB),
+	setp_from_content(Content, ValueURL, Lang1, DB).
 
 
 		 /*******************************
