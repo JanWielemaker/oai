@@ -118,6 +118,10 @@ on_metadata(ServerURL, DB, XML) :-
 %	    * from(+From)
 %	    * until(+Until)
 %	    FIXME: OAI attributes; what do they do?
+%
+%	This predicate use the RDF graph =oai_crawler= for storing
+%	intermediate data.  This graph is filled and wiped for each
+%	resumption-token.
 
 oai_crawl(Server, File, Options) :-
 	select_option(resumption_count(Count), Options, Options1, -1),
@@ -127,13 +131,13 @@ oai_crawl(Server, File, Options) :-
 
 fetch_record_loop(0, _, _, _) :- !.
 fetch_record_loop(Count, Server, Out, Options) :-
-	rdf_retractall(_,_,_,tmp),
-	retry_oai_records(1, Server, tmp,
+	rdf_retractall(_,_,_,oai_crawler),
+	retry_oai_records(1, Server, oai_crawler,
 			  [ next_resumption_token(NextToken)
 			  | Options
 			  ]),
 	comment(Out, Options, Options1),
-	rdf_save_turtle(Out, [ graph(tmp) ]),
+	rdf_save_turtle(Out, [ graph(oai_crawler) ]),
 	flush_output(Out),
 	(   NextToken == []
 	->  true
