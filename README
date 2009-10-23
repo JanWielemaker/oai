@@ -104,12 +104,18 @@ to inspect the contents using the Triple20 ontology browser.
 	Toplevel driver
 	$ load.pl :
 	load the components
-	$oai.pl	:
+	$ servers.pl :
+	Defines aliases for OAI servers. see oai_server/2.
+	$ oai.pl :	:
  	AOI HTTP client, calling user hook to process OAI content.
 	$ oairdf.pl :
 	Uses oai.pl, providing a hook to translate into RDF
 	$ t20_extensions.pl :
 	Define some extensions to Triple20
-	$ oai.rdfs :
+	$ pltotex.pl :
+	Call PlDoc to create PDF documentation from README
+	$ Makefile :
+	Drive translation of PDF documentation
+	$ oai.ttl :
 	RDFS description of AOI records (partial) used to guide translation.
 

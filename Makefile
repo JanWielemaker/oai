@@ -1,4 +1,4 @@
-PL=	load.pl oai.pl oairdf.pl pltotex.pl run.pl
+PL=	load.pl oai.pl oairdf.pl pltotex.pl servers.pl run.pl
 
 all:	README.pdf
 
