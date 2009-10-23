@@ -7,7 +7,7 @@
 
 	    oai_records/3,		% +ServerID, +DB, +Options
 	    oai_crawl/3,		% +ServerID, +File, +Options
-	    oai_craw_by_set/3,		% +ServerID, +Dir, +Options
+	    oai_crawl_by_set/3,		% +ServerID, +Dir, +Options
 
 	    oai_reset_warnings/0
 	  ]).
@@ -198,7 +198,7 @@ comment(Out, Options0, Options) :-
 	).
 
 
-%%	oai_craw_by_set(+ServerId, +Dir, +Options)
+%%	oai_crawl_by_set(+ServerId, +Dir, +Options)
 %
 %	Crawl a server  set-by-set,  where  each   set  creates  a  file
 %	<set>.ttl  in  the  directory   Dir.    Options   is  passed  to
@@ -208,7 +208,7 @@ comment(Out, Options0, Options) :-
 %	    If provided and the download file already exists, the set
 %	    is skipped.
 
-oai_craw_by_set(ServerID, Dir, Options) :-
+oai_crawl_by_set(ServerID, Dir, Options) :-
 	ensure_directory(Dir),
 	oai_sets(ServerID, ServerID),
 	findall(Set, rdf(Set, rdf:type, oai:'Set', ServerID), Sets),

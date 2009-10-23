@@ -81,7 +81,7 @@ The predicates below are the main predicates for downloading (large)
 repositories.
 
   * [[oai_crawl/3]]
-  * [[oai_craw_by_set/3]]
+  * [[oai_crawl_by_set/3]]
 
 ---+++ Explore (small) repositories from memory
 
