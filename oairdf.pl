@@ -302,14 +302,22 @@ setp_from_content([element(EName, AL, CL)|T], URL, Lang, DB) :-
 	setp_from_content(T, URL, Lang, DB).
 
 
-make_value([], [Value], Literal, literal(Value), '', _) :- !,
-	rdf_equal(rdfs:'Literal', Literal), !.
-make_value([], [Value], Literal, literal(lang(Lang, Value)), Lang, _) :- !,
-	rdf_equal(rdfs:'Literal', Literal), !.
-make_value([xml:lang=Lang], [Value], Literal, literal(lang(Lang, Value)), _, _) :-
-	rdf_equal(rdfs:'Literal', Literal), !.
-make_value(_, Content, XMLLiteral, literal(type(XMLLiteral, Content)), _, _) :-
-	rdf_equal(rdfs:'XMLLiteral', XMLLiteral), !.
+%%	make_value(+Attributes, +Content, +Type, -Value, +Lang, +DB)
+
+make_value(Atts, [Text], Literal, literal(Value), Lang, _) :-
+	atom(Text),
+	rdf_equal(rdfs:'Literal', Literal), !,
+	(   memberchk(xml:lang=TheLang, Atts)
+	->  Value = lang(TheLang, Text)
+	;   Lang = ''
+	->  Value = Text
+	;   Value = lang(Lang, Text)
+	).
+make_value(_, Content, Type, literal(type(XMLLit, Content)), _, _) :-
+	rdf_equal(rdfs:'XMLLiteral', XMLLit),
+	(   Type = XMLLit
+	;   rdf_equal(rdfs:'Literal', Type)
+	), !.
 make_value(Attrs, Content, Type, ValueURL, Lang, DB) :-
 	rdf_bnode(ValueURL),
 	rdf_assert(ValueURL, rdf:type, Type, DB),
