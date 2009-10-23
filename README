@@ -1,14 +1,11 @@
-OAI to RDF mapping
-==================
+---+ OAI to RDF mapping
 
-Last updated: Oct 23, 2009
-
-Requirements:
-==========================
+---++ Requirements:
 
 	* SWI-Prolog 5.8.0
 	* Triple20 (GIT version, see
 	  http://www.swi-prolog.org/web/Triple20.html
+
 ---+ Simple OAI/RDF tools
 
 ---++ Installation
@@ -16,7 +13,7 @@ Requirements:
 [still very much `development']
 
 	* On Unix, edit #!... line in run.pl to point to Prolog
-	* In load.pl, edit file_search_path to reflect location of
+	* In load.pl, edit file_search_path/2 to reflect location of
 	  Triple20 sources.
 	* In oai.pl, add identifiers and URLs of servers you want to
 	  access.
@@ -64,6 +61,11 @@ as Turtle data.
 The last argument is a list of options.  The supported options are given
 with the source of oai_crawl/3.
 
+
+---++ Predicate documentation
+
+  * [[oai_crawl/3]]
+  * [[oai_craw_by_set/3]]
 
 ---++ Roadmap
 
