@@ -76,11 +76,17 @@ handle_content_parts([Elem|T], E, Handler, RT0, RT) :-
 	match_element(Elem, E), !,
 	call(Handler, Elem),
 	handle_content_parts(T, E, Handler, RT0, RT).
-handle_content_parts([element(_:resumptionToken,_,[RT1])|T], E, H, _, RT) :- !,
+handle_content_parts([element(_:resumptionToken,RA,RC)|T], E, H, _, RT) :-
+	resumption_token(RA, RC, RT1), !,
 	handle_content_parts(T, E, H, RT1, RT).
 handle_content_parts([Error|T], E, H, RT0, RT) :-
 	print_message(warning, oai(skipped(Error))),
 	handle_content_parts(T, E, H, RT0, RT).
+
+resumption_token(_, [Token], Token).
+resumption_token(RA, [], Token) :-
+	memberchk(cursor=Token, RA).
+
 
 match_element(element(_:E, _, _), E) :- !.
 match_element(element(E, _, _), E).
@@ -113,7 +119,7 @@ oai_server_address(Server, _) :-
 %	Replace or add the resumptionToken argument of the URL.
 
 resumption_url(ParsedURL, ResumptionToken, NewURL) :-
-	select(search(Search0), ParsedURL, URL1),
+	selectchk(search(Search0), ParsedURL, URL1),
 	memberchk(verb=Verb, Search0),
 	Search = [ resumptionToken = ResumptionToken,
 		   verb = Verb
