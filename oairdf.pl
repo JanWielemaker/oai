@@ -7,6 +7,7 @@
 
 	    oai_records/3,		% +ServerID, +DB, +Options
 	    oai_crawl/3,		% +ServerID, +File, +Options
+	    oai_craw_by_set/3,		% +ServerID, +Dir, +Options
 
 	    oai_reset_warnings/0
 	  ]).
@@ -16,6 +17,8 @@
 :- use_module(library(semweb/rdf_turtle)).
 :- use_module(library(semweb/rdf_turtle_write)).
 :- use_module(library(debug)).
+:- use_module(library(option)).
+:- use_module(library(broadcast)).
 
 :- multifile
 	rdf_db:ns/2.
@@ -43,6 +46,8 @@ rdf_db:ns(oai, 'http://www.openarchives.org/OAI/2.0/').
 %	    * oai:Server
 %	    * oai:Set
 %	    * oai:metadataFormat
+%
+%	The datamodel is described in the file =|oai.ttl|=.
 
 oai_server_properties(ServerID, DB) :-
 	try(oai_identify(ServerID, DB)),
@@ -193,6 +198,36 @@ comment(Out, Options0, Options) :-
 	).
 
 
+%%	oai_craw_by_set(+ServerId, +Dir, +Options)
+%
+%	Crawl a server  set-by-set,  where  each   set  creates  a  file
+%	<set>.ttl  in  the  directory   Dir.    Options   is  passed  to
+%	oai_crawl/3. In addition, we process the following:
+%
+%	    * if(not_exists)
+%	    If provided and the download file already exists, the set
+%	    is skipped.
+
+oai_craw_by_set(ServerID, Dir, Options) :-
+	ensure_directory(Dir),
+	oai_sets(ServerID, ServerID),
+	forall(rdf(Set, rdf:type, oai:'Set', ServerID),
+	       crawl_set(ServerID, Dir, Set, Options)).
+
+ensure_directory(Dir) :-
+	exists_directory(Dir), !.
+ensure_directory(Dir) :-
+	make_directory(Dir).
+
+crawl_set(ServerID, Dir, Set, Options) :-
+	atomic_list_concat([Dir, /, Set, '.ttl'], File),
+	(   option(if(not_exists), Options),
+	    exists_file(File)
+	->  print_message(informational, oai(skipped(exists, Set)))
+	;   oai_crawl(ServerID, File, [set(Set)|Options])
+	).
+
+
 %%	oai_records(+ServerId, +Graph, +Options)
 %
 %	Fetch OAI records from ServerId into   the  given named Graph of
@@ -307,7 +342,9 @@ to_atom(Resource, Resource) :-
 		 *******************************/
 
 :- multifile
-	prolog:message/3.
+	prolog:message//1.
 
 prolog:message(xmlrdf(no_range(Prop, Assumed))) -->
 	[ 'XMLRDF: No range for property ~p; Assuming ~p'-[Prop, Assumed] ].
+prolog:message(oai(skipped(exists, Set))) -->
+	[ 'OAI Crawler: skipped set "~w": file exists'-[Set] ].
