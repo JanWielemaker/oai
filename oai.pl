@@ -10,7 +10,7 @@
 :- use_module(library(url)).
 :- use_module(library(occurs)).
 
-:- meta_predicate oai_request(+, +, :, +).
+:- meta_predicate oai_request(+, +, 1, +).
 
 :- multifile oai_server/2.
 :- dynamic   oai_server/2.

@@ -44,6 +44,9 @@ oai_server_properties(ServerID, DB) :-
 	try(oai_metadata(ServerID, DB)),
 	broadcast(triple20(refresh)).
 
+:- meta_predicate
+	try(0).
+
 try(G) :-
 	(   catch(G, E, true)
 	->  (   var(E)

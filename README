@@ -1,55 +1,82 @@
 OAI to RDF mapping
 ==================
 
-Last updated: Mar 10, 2005
+Last updated: Oct 23, 2009
 
 Requirements:
 ==========================
 
-	* SWI-Prolog 5.5.10
-	* Triple20 (CVS version, see
-	  http://www.swi-prolog.org/packages/Triple20
+	* SWI-Prolog 5.8.0
+	* Triple20 (GIT version, see
+	  http://www.swi-prolog.org/web/Triple20.html
+---+ Simple OAI/RDF tools
 
-Installation
-============
+---++ Installation
 
 [still very much `development']
 
 	* On Unix, edit #!... line in run.pl to point to Prolog
 	* In load.pl, edit file_search_path to reflect location of
 	  Triple20 sources.
-	* In oai.pl, add identifiers and URLs of servers you wan to
+	* In oai.pl, add identifiers and URLs of servers you want to
 	  access.
 
-Running (example uses fontys):
+---++ Running (example uses fontys):
 
 	* Start run.pl
 	* To get server identifier, run
 
+		==
 		?- sp(fontys).
+		==
 
 	* To get records
 
+		==
 		?- gr(fontys).
+		==
 
 	* To start Triple20 in environment, so you can examine the
 	loaded data:
 
+		==
 		?- triple20.
+		==
 
 	* To generate an RDF file:
 
+		==
 		?- rdf_save('fontys.rdf', fontys).
+		==
 
-Roadmap
-=======
+---++ Big repositories
 
-	run.pl		Toplevel driver
-	load.pl		load the components
-	oai.pl		AOI HTTP client, calling user hook to process
-			OAI content.
-	oairdf.pl	Uses oai.pl, providing a hook to translate into RDF
-	t20_extensions.pl	Define some extensions to Triple20
-	oai.rdfs	RDFS description of AOI records (partial) used to
-			guide translation.
-			
+Big repositories typically offer _ResumptionToken_ support that splits
+the download into smaller chunks and can restart if an error occurs.
+This is supported using oai_crawl/3 in oairdf.pl. Typical usage is below
+to crawl all data from a server and store it in the file =|fontys.ttl|=
+as Turtle data.
+
+	==
+	?- oai_crawl(fontys, 'fontys.ttl', []).
+	==
+
+The last argument is a list of options.  The supported options are given
+with the source of oai_crawl/3.
+
+
+---++ Roadmap
+
+	$ run.pl :
+	Toplevel driver
+	$ load.pl :
+	load the components
+	$oai.pl	:
+ 	AOI HTTP client, calling user hook to process OAI content.
+	$ oairdf.pl :
+	Uses oai.pl, providing a hook to translate into RDF
+	$ t20_extensions.pl :
+	Define some extensions to Triple20
+	$ oai.rdfs :
+	RDFS description of AOI records (partial) used to guide translation.
+
