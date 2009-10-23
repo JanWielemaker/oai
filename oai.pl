@@ -84,9 +84,7 @@ handle_content_parts([Error|T], E, H, RT0, RT) :-
 	handle_content_parts(T, E, H, RT0, RT).
 
 resumption_token(_, [Token], Token).
-resumption_token(RA, [], Token) :-
-	memberchk(cursor=Token, RA).
-
+resumption_token(_, [], []).
 
 match_element(element(_:E, _, _), E) :- !.
 match_element(element(E, _, _), E).

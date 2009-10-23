@@ -34,7 +34,7 @@ OAI:baseURL
 	a rdf:Property ;
 	rdfs:domain OAI:Server ;
 	rdfs:label "baseURL" ;
-	rdfs:range rdfs:Literal .
+	rdfs:range rdfs:Resource .
 
 OAI:deletedRecord
 	a rdf:Property ;
@@ -90,12 +90,24 @@ OAI:protocolVersion
 	rdfs:label "protocolVersion" ;
 	rdfs:range rdfs:Literal .
 
+OAI:compression
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "compression" ;
+	rdfs:range rdfs:Literal .
+
 OAI:repositoryName
 	a rdf:Property ;
 	rdfs:domain OAI:Server ;
 	rdfs:label "repositoryName" ;
 	rdfs:range rdfs:Literal ;
 	rdfs:subPropertyOf rdfs:label .
+
+OAI:description
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "description" ;
+	rdfs:range rdfs:Literal .
 
 OAI:schema
 	a rdf:Property ;
@@ -122,4 +134,11 @@ OAI:setSpec
 	rdfs:domain OAI:Set ;
 	rdfs:label "setSpec" ;
 	rdfs:range rdfs:Literal ;
-	rdfs:subPropertyOf rdfs:label .
+	rdfs:comment "a setSpec -- a colon [:] separated list indicating the path from the root of the set hierarchy to the respective node. Each element in the list is a string consisting of any valid URI unreserved characters, which must not contain any colons [:]. Since a setSpec forms a unique identifier for the set within the repository, it must be unique for each set." .
+
+OAI:setDescription
+	a rdf:Property ;
+	rdfs:domain OAI:Set ;
+	rdfs:label "setDescription" ;
+	rdfs:range rdfs:XMLLiteral .
+

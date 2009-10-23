@@ -211,7 +211,10 @@ comment(Out, Options0, Options) :-
 oai_craw_by_set(ServerID, Dir, Options) :-
 	ensure_directory(Dir),
 	oai_sets(ServerID, ServerID),
-	forall(rdf(Set, rdf:type, oai:'Set', ServerID),
+	findall(Set, rdf(Set, rdf:type, oai:'Set', ServerID), Sets),
+	length(Sets, Length),
+	debug(oai, 'Got ~D sets', [Length]),
+	forall(member(Set, Sets),
 	       crawl_set(ServerID, Dir, Set, Options)).
 
 ensure_directory(Dir) :-
@@ -221,12 +224,25 @@ ensure_directory(Dir) :-
 
 crawl_set(ServerID, Dir, Set, Options) :-
 	rdf(Set, oai:setName, literal(SetName)),
-	atomic_list_concat([Dir, /, SetName, '.ttl'], File),
+	rdf(Set, oai:setSpec, literal(SetSpec)),
+	set_spec_to_base(SetSpec, Base),
+	atomic_list_concat([Dir, /, Base, '.ttl'], File),
 	(   option(if(not_exists), Options),
 	    exists_file(File)
-	->  print_message(informational, oai(skipped(exists, Options)))
-	;   oai_crawl(ServerID, File, [set(Options)|Options])
+	->  print_message(informational, oai(skipped(exists, SetName)))
+	;   debug(oai, 'Downloading set ~w (setSpec=~w) ...',
+		  [SetName, SetSpec]),
+	    oai_crawl(ServerID, File, [set(SetSpec)|Options])
 	).
+
+set_spec_to_base(SetSpec, Base) :-
+	atom_codes(SetSpec, Codes),
+	maplist(colon_to_underscore, Codes, BaseCodes),
+	atom_codes(Base, BaseCodes).
+
+colon_to_underscore(0':, 0'_) :- !.
+colon_to_underscore(C, C).
+
 
 
 %%	oai_records(+ServerId, +Graph, +Options)
@@ -287,7 +303,7 @@ setp_from_attributes([xml:_=_|T], URL, Lang0, Lang, DB) :- !,
 setp_from_attributes([AttName=Value|T], URL, Lang0, Lang, DB) :-
 	to_atom(AttName, Prop0),
 	map_property(URL, Prop0, Prop, _Type),
-	(   Lang0 == ''
+	(   Lang0 == (-)
 	->  rdf_assert(URL, Prop, literal(Value), DB)
 	;   rdf_assert(URL, Prop, literal(lang(Lang0, Value)), DB)
 	),
@@ -309,7 +325,7 @@ make_value(Atts, [Text], Literal, literal(Value), Lang, _) :-
 	rdf_equal(rdfs:'Literal', Literal), !,
 	(   memberchk(xml:lang=TheLang, Atts)
 	->  Value = lang(TheLang, Text)
-	;   Lang = ''
+	;   Lang = (-)
 	->  Value = Text
 	;   Value = lang(Lang, Text)
 	).
@@ -318,6 +334,9 @@ make_value(_, Content, Type, literal(type(XMLLit, Content)), _, _) :-
 	(   Type = XMLLit
 	;   rdf_equal(rdfs:'Literal', Type)
 	), !.
+make_value([], [URL], Type, URL, _, _) :-
+	atom(URL),
+	rdfs_subclass_of(Type, rdfs:'Resource'), !.
 make_value(Attrs, Content, Type, ValueURL, Lang, DB) :-
 	rdf_bnode(ValueURL),
 	rdf_assert(ValueURL, rdf:type, Type, DB),
@@ -344,7 +363,8 @@ map_property(_Subject, Prop, Prop, Literal) :-
 
 %%	oai_reset_warnings
 %
-%	Reset warnings that are already given
+%	Reset warnings about implicitely  mapped   properties  that  are
+%	already given.
 
 oai_reset_warnings :-
 	retractall(warned_prop(_)).
