@@ -1,0 +1,125 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix  OAI: <http://www.openarchives.org/OAI/2.0/> .
+
+# Named toplevel resources (20)
+
+OAI:Record
+	a rdfs:Class ;
+	rdfs:label "Record" ;
+	rdfs:subClassOf OAI:Thing .
+
+OAI:Server
+	a rdfs:Class ;
+	rdfs:label "Server" ;
+	rdfs:subClassOf OAI:Thing .
+
+OAI:Set
+	a rdfs:Class ;
+	rdfs:label "Set" ;
+	rdfs:subClassOf OAI:Thing .
+
+OAI:Thing
+	a rdfs:Class ;
+	rdfs:label "Thing" ;
+	rdfs:subClassOf rdfs:Resource .
+
+OAI:adminEmail
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "adminEmail" ;
+	rdfs:range rdfs:Literal .
+
+OAI:baseURL
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "baseURL" ;
+	rdfs:range rdfs:Literal .
+
+OAI:deletedRecord
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "deletedRecord" ;
+	rdfs:range rdfs:Literal .
+
+OAI:description
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "description" ;
+	rdfs:range rdfs:XMLLiteral .
+
+OAI:earliestDatestamp
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "earliestDatestamp" ;
+	rdfs:range rdfs:Literal .
+
+OAI:granularity
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "granularity" ;
+	rdfs:range rdfs:Literal .
+
+OAI:identifier
+	a rdf:Property ;
+	rdfs:domain OAI:Record ;
+	rdfs:label "identifier" ;
+	rdfs:range rdfs:Literal .
+
+OAI:metadataFormat
+	a rdfs:Class ;
+	rdfs:label "metadataFormat" ;
+	rdfs:subClassOf OAI:Thing .
+
+OAI:metadataNamespace
+	a rdf:Property ;
+	rdfs:domain OAI:metadataFormat ;
+	rdfs:label "metadataNamespace" ;
+	rdfs:range rdfs:Literal .
+
+OAI:metadataPrefix
+	a rdf:Property ;
+	rdfs:domain OAI:metadataFormat ;
+	rdfs:label "metadataPrefix" ;
+	rdfs:range rdfs:Literal ;
+	rdfs:subPropertyOf rdfs:label .
+
+OAI:protocolVersion
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "protocolVersion" ;
+	rdfs:range rdfs:Literal .
+
+OAI:repositoryName
+	a rdf:Property ;
+	rdfs:domain OAI:Server ;
+	rdfs:label "repositoryName" ;
+	rdfs:range rdfs:Literal ;
+	rdfs:subPropertyOf rdfs:label .
+
+OAI:schema
+	a rdf:Property ;
+	rdfs:domain OAI:metadataFormat ;
+	rdfs:label "schema" ;
+	rdfs:range rdfs:Literal .
+
+OAI:server
+	a rdf:Property ;
+	rdfs:domain OAI:Set ,
+		    OAI:metadataFormat ;
+	rdfs:label "server" ;
+	rdfs:range OAI:Server .
+
+OAI:setName
+	a rdf:Property ;
+	rdfs:domain OAI:Set ;
+	rdfs:label "setName" ;
+	rdfs:range rdfs:Literal ;
+	rdfs:subPropertyOf rdfs:label .
+
+OAI:setSpec
+	a rdf:Property ;
+	rdfs:domain OAI:Set ;
+	rdfs:label "setSpec" ;
+	rdfs:range rdfs:Literal ;
+	rdfs:subPropertyOf rdfs:label .

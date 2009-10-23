@@ -13,6 +13,7 @@
 :- use_module(oai).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
+:- use_module(library(semweb/rdf_turtle)).
 :- use_module(library(semweb/rdf_turtle_write)).
 :- use_module(library(debug)).
 
@@ -26,17 +27,22 @@ rdf_db:ns(oai, 'http://www.openarchives.org/OAI/2.0/').
 	rdf_load(ontology(dc)),
 	rdf_load(ontology(dcterms)),
 	rdf_load(ontology(dctypes)),
-	rdf_load('oai.rdfs').
+	rdf_load('oai.ttl').
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Translation of OAI server into an RDF database
+/** <module> Fetch data from an OAI server into an RDF database
 
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+*/
 
-%	oai_server_properties(+ServerID, +DB)
+%%	oai_server_properties(+ServerID, +Graph) is det.
 %
-%	Get information about the server
+%	Get information about the OAI server   ServerID  and store it in
+%	the given named graph. This call   creates RDFS instances of the
+%	following classes:
+%
+%	    * oai:Server
+%	    * oai:Set
+%	    * oai:metadataFormat
 
 oai_server_properties(ServerID, DB) :-
 	try(oai_identify(ServerID, DB)),
