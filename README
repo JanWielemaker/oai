@@ -1,4 +1,4 @@
----+ OAI to RDF mapping
+---+ Download OAI repository data and convert to RDF
 
 ---++ Requirements:
 
@@ -6,17 +6,19 @@
 	* Triple20 (GIT version, see
 	  http://www.swi-prolog.org/web/Triple20.html
 
----+ Simple OAI/RDF tools
-
 ---++ Installation
-
-[still very much `development']
 
 	* On Unix, edit #!... line in run.pl to point to Prolog
 	* In load.pl, edit file_search_path/2 to reflect location of
 	  Triple20 sources.
 	* In oai.pl, add identifiers and URLs of servers you want to
 	  access.
+
+You can (re-)built the documentation on a Unix environment by editing
+the #!... line on pltotex.pl and running =make=.  This generates a
+LaTeX file from README and the PlDoc comments in the sources and
+creates a PDF file from this using =pdflatex=
+
 
 ---++ Running (example uses fontys):
 
@@ -61,11 +63,37 @@ as Turtle data.
 The last argument is a list of options.  The supported options are given
 with the source of oai_crawl/3.
 
+If the repository is split into many datasets, one may wish to use
 
----++ Predicate documentation
+	==
+	?- oai_crawl_by_set(fontys, 'fontys.dir', []).
+	==
+
+This creates a directory =|fontys.dir|= and a file for each dataset.
+See oai_craw_by_set/3 for details and options.
+
+
+---++ Predicate reference
+
+---+++ Download repositories to a a file
+
+The predicates below are the main predicates for downloading (large)
+repositories.
 
   * [[oai_crawl/3]]
   * [[oai_craw_by_set/3]]
+
+---+++ Explore (small) repositories from memory
+
+These predicates downloads (partial) repositories into memory and allow
+to inspect the contents using the Triple20 ontology browser.
+
+  * [[sp/1]]
+  * [[gr/1]]
+  * [[gr1/1]]
+  * [[triple20/0]]
+  * [[turtle/1]]
+
 
 ---++ Roadmap
 

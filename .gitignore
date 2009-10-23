@@ -1,0 +1,6 @@
+*.aux
+*.idx
+*.log
+*.out
+README.tex
+oai-crawl-errors.txt
