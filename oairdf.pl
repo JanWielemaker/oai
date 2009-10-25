@@ -216,7 +216,10 @@ oai_crawl_by_set(ServerID, Dir, Options) :-
 	length(Sets, Length),
 	debug(oai, 'Got ~D sets', [Length]),
 	forall(member(Set, Sets),
-	       crawl_set(ServerID, Dir, Set, Options)).
+	       (   crawl_set(ServerID, Dir, Set, Options)
+	       ->  true
+	       ;   print_message(error, oai(failed_set(Set)))
+	       )).
 
 ensure_directory(Dir) :-
 	exists_directory(Dir), !.
@@ -392,3 +395,6 @@ prolog:message(xmlrdf(no_range(Prop, Assumed))) -->
 	[ 'XMLRDF: No range for property ~p; Assuming ~p'-[Prop, Assumed] ].
 prolog:message(oai(skipped(exists, Set))) -->
 	[ 'OAI Crawler: skipped set "~w": file exists'-[Set] ].
+prolog:message(oai(failed_set(Set))) -->
+	{ rdf(Set, oai:setName, literal(SetName)) }, !,
+	[ 'OAI Crawler: downloading of set ~w failed'-[SetName] ].
