@@ -161,18 +161,19 @@ fetch_record_loop(Count, Server, Out, Options) :-
 
 
 retry_oai_records(Try, Server, DB, Options) :-
-	(   catch(oai_records(Server, DB, Options), E, true),
+	select_option(retry(MaxRetry),          Options,  Options1, 100),
+	select_option(retry_delay(Delay0),      Options1, Options2, 10),
+	select_option(retry_maxdelay(MaxDelay), Options2, Options3, 3600),
+
+	(   catch(oai_records(Server, DB, Options3), E, true),
 	    (   var(E)
 	    ->	true
 	    ;	report_error(E),
 		fail
 	    )
 	->  true
-	;   option(retry(MaxRetry), Options, 100),
-	    Try < MaxRetry
-	->  option(retry_delay(Delay0), Options, 10),
-	    option(retry_maxdelay(MaxDelay), Options, 3600),
-	    Delay is min(MaxDelay, Delay0 * (2**(Try-1))),
+	;   Try < MaxRetry
+	->  Delay is min(MaxDelay, Delay0 * (2**(Try-1))),
 	    debug(oai, 'Retrying in ~D seconds ...', [Delay]),
 	    sleep(Delay),
 	    Retry is Try + 1,
