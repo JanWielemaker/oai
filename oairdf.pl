@@ -230,13 +230,14 @@ crawl_set(ServerID, Dir, Set, Options) :-
 	rdf(Set, oai:setName, literal(SetName)),
 	rdf(Set, oai:setSpec, literal(SetSpec)),
 	set_spec_to_base(SetSpec, Base),
+	select_option(if(Cond), Options, Options1, true),
 	atomic_list_concat([Dir, /, Base, '.ttl'], File),
-	(   option(if(not_exists), Options),
+	(   Cond == not_exists,
 	    exists_file(File)
 	->  print_message(informational, oai(skipped(exists, SetName)))
 	;   debug(oai, 'Downloading set ~w (setSpec=~w) ...',
 		  [SetName, SetSpec]),
-	    oai_crawl(ServerID, File, [set(SetSpec)|Options])
+	    oai_crawl(ServerID, File, [set(SetSpec)|Options1])
 	).
 
 set_spec_to_base(SetSpec, Base) :-
