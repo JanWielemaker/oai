@@ -7,23 +7,20 @@
 
 	    oai_records/3,		% +ServerID, +DB, +Options
 	    oai_crawl/3,		% +ServerID, +File, +Options
-	    oai_crawl_by_set/3,		% +ServerID, +Dir, +Options
-
-	    oai_reset_warnings/0
+	    oai_crawl_by_set/3		% +ServerID, +Dir, +Options
 	  ]).
 :- use_module(oai).
+:- use_module(xmlrdf).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_turtle)).
 :- use_module(library(semweb/rdf_turtle_write)).
 :- use_module(library(debug)).
 :- use_module(library(option)).
+:- use_module(library(lists)).
 :- use_module(library(broadcast)).
 
-:- multifile
-	rdf_db:ns/2.
-
-rdf_db:ns(oai, 'http://www.openarchives.org/OAI/2.0/').
+:- rdf_register_ns(oai, 'http://www.openarchives.org/OAI/2.0/').
 
 :- initialization
 	rdf_load(ontology('rdfs')),
@@ -74,18 +71,17 @@ oai_identify(ServerId, DB) :-
 
 on_identify(ServerURL, DB, XML) :-
 	rdf_assert(ServerURL, rdf:type, oai:'Server', DB),
-	set_properties(ServerURL, XML, DB).
+	xmldom_rdf_properties(ServerURL, XML, [graph(DB)]).
 
 oai_sets(ServerId, DB) :-
 	oai_server_address(ServerId, ServerURL),
 	oai_request(ServerURL, 'ListSets', on_set(ServerURL, DB), []).
 
 on_set(ServerURL, DB, XML) :-
-%	pp(XML),
 	rdf_bnode(Set),
 	rdf_assert(Set, rdf:type, oai:'Set', DB),
 	rdf_assert(Set, oai:server, ServerURL, DB),
-	set_properties(Set, XML, DB).
+	xmldom_rdf_properties(Set, XML, [graph(DB)]).
 
 oai_metadata(ServerId, DB) :-
 	oai_server_address(ServerId, ServerURL),
@@ -93,11 +89,10 @@ oai_metadata(ServerId, DB) :-
 		    on_metadata(ServerURL, DB), []).
 
 on_metadata(ServerURL, DB, XML) :-
-%	pp(XML),
 	rdf_bnode(MDF),
 	rdf_assert(MDF, rdf:type, oai:'metadataFormat', DB),
 	rdf_assert(MDF, oai:server, ServerURL, DB),
-	set_properties(MDF, XML, DB).
+	xmldom_rdf_properties(MDF, XML, [graph(DB)]).
 
 %%	oai_crawl(+Server, +File, +Options)
 %
@@ -268,7 +263,7 @@ on_record(ServerURL, DB,
 			])) :-
 	rdf_bnode(URL),
 	memberchk(element(_:identifier, _, [ID]), HDR),
-%	debug(oai, 'Creating record ~w', [URL]),
+	debug(oai(record), 'Creating record ~w', [URL]),
 	rdf_assert(URL, rdf:type, oai:'Record', DB),
 	rdf_assert(URL, oai:server, ServerURL, DB),
 	rdf_assert(URL, oai:identifier, literal(ID), DB),
@@ -277,7 +272,7 @@ on_record(ServerURL, DB,
 	;   true
 	),
 	forall(element(metadata, Content, element(_, _, [MD])),
-	       set_properties(URL, MD, DB)).
+	       xmldom_rdf_properties(URL, MD, [graph(DB)])).
 
 element(Name, Content, Element) :-
 	member(Element, Content),
@@ -288,112 +283,12 @@ match_element(element(Name, _, _), Name).
 
 
 		 /*******************************
-		 *	     PROPERTIES		*
-		 *******************************/
-
-set_properties(URL, element(_, Attrs, Content), DB) :-
-	set_properties(URL, element(_, Attrs, Content), -, DB).
-
-set_properties(URL, element(_, Attrs, Content), Lang, DB) :-
-	setp_from_attributes(Attrs, URL, Lang, Lang1, DB),
-	setp_from_content(Content, URL, Lang1, DB).
-
-setp_from_attributes([], _, Lang, Lang, _).
-setp_from_attributes([xmlns:_=_|T], URL, Lang0, Lang, DB) :- !,
-	setp_from_attributes(T, URL, Lang0, Lang, DB).
-setp_from_attributes([xmlns=_|T], URL, Lang0, Lang, DB) :- !,
-	setp_from_attributes(T, URL, Lang0, Lang, DB).
-setp_from_attributes([xml:_=_|T], URL, Lang0, Lang, DB) :- !,
-	setp_from_attributes(T, URL, Lang0, Lang, DB).
-setp_from_attributes([AttName=Value|T], URL, Lang0, Lang, DB) :-
-	to_atom(AttName, Prop0),
-	map_property(URL, Prop0, Prop, _Type),
-	(   Lang0 == (-)
-	->  rdf_assert(URL, Prop, literal(Value), DB)
-	;   rdf_assert(URL, Prop, literal(lang(Lang0, Value)), DB)
-	),
-	setp_from_attributes(T, URL, Lang0, Lang, DB).
-
-setp_from_content([], _, _, _).
-setp_from_content([element(EName, AL, CL)|T], URL, Lang, DB) :-
-	to_atom(EName, Prop0),
-	map_property(URL, Prop0, Prop, Type),
-	make_value(AL, CL, Type, Value, Lang, DB),
-	rdf_assert(URL, Prop, Value, DB),
-	setp_from_content(T, URL, Lang, DB).
-
-
-%%	make_value(+Attributes, +Content, +Type, -Value, +Lang, +DB)
-
-make_value(Atts, [Text], Literal, literal(Value), Lang, _) :-
-	atom(Text),
-	rdf_equal(rdfs:'Literal', Literal), !,
-	(   memberchk(xml:lang=TheLang, Atts)
-	->  Value = lang(TheLang, Text)
-	;   Lang = (-)
-	->  Value = Text
-	;   Value = lang(Lang, Text)
-	).
-make_value(_, Content, Type, literal(type(XMLLit, Content)), _, _) :-
-	rdf_equal(rdfs:'XMLLiteral', XMLLit),
-	(   Type = XMLLit
-	;   rdf_equal(rdfs:'Literal', Type)
-	), !.
-make_value([], [URL], Type, URL, _, _) :-
-	atom(URL),
-	rdfs_subclass_of(Type, rdfs:'Resource'), !.
-make_value(Attrs, Content, Type, ValueURL, Lang, DB) :-
-	rdf_bnode(ValueURL),
-	rdf_assert(ValueURL, rdf:type, Type, DB),
-	setp_from_attributes(Attrs, ValueURL, Lang, Lang1, DB),
-	setp_from_content(Content, ValueURL, Lang1, DB).
-
-
-		 /*******************************
-		 *	       MAP		*
-		 *******************************/
-
-:- dynamic
-	warned_prop/1.
-
-map_property(_Subject, Prop, Prop, Type) :-
-	rdf(Prop, rdfs:range, Type), !.
-map_property(_Subject, Prop, Prop, Literal) :-
-	rdf_equal(rdfs:'Literal', Literal),
-	(   warned_prop(Prop)
-	->  true
-	;   print_message(warning, xmlrdf(no_range(Prop, Literal))),
-	    assert(warned_prop(Prop))
-	).
-
-%%	oai_reset_warnings
-%
-%	Reset warnings about implicitely  mapped   properties  that  are
-%	already given.
-
-oai_reset_warnings :-
-	retractall(warned_prop(_)).
-
-
-		 /*******************************
-		 *	       UTIL		*
-		 *******************************/
-
-to_atom(NS:Value, Resource) :- !,
-	atom_concat(NS, Value, Resource).
-to_atom(Resource, Resource) :-
-	atom(Resource).
-
-
-		 /*******************************
 		 *	      MESSAGES		*
 		 *******************************/
 
 :- multifile
 	prolog:message//1.
 
-prolog:message(xmlrdf(no_range(Prop, Assumed))) -->
-	[ 'XMLRDF: No range for property ~p; Assuming ~p'-[Prop, Assumed] ].
 prolog:message(oai(skipped(exists, Set))) -->
 	[ 'OAI Crawler: skipped set "~w": file exists'-[Set] ].
 prolog:message(oai(failed_set(Set))) -->
