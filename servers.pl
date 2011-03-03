@@ -14,3 +14,4 @@ oai_server(fontys,   'http://www.fontyspublicaties.nl/oai/pub.fontys.nl.cgi').
 oai_server(svcn,     'http://62.221.199.220:26006/').
 oai_server(scran,    'http://www.scran.ac.uk/xmlrpc/oai/oai2.php').
 oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
+oai_server(stabi,    'http://digital.staatsbibliothek-berlin.de/oai/').
