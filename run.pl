@@ -1,4 +1,4 @@
-#!/staff/jan/bin/pl -L0 -G0 -T0 -s
+#!/staff/janw/bin/swipl -s
 
 :- [load].
 
