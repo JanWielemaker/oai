@@ -121,6 +121,11 @@ on_metadata(ServerURL, DB, XML) :-
 %	    * set(+Set)
 %	    Specify a dataset
 %
+%	    * split(+Size)
+%	    Create output files of approximatly Size bytes.  If this
+%	    option is used, File is the base for creating files. The
+%	    created files are called <base>-NNNN.ttl.
+%
 %	    * from(+From)
 %	    * until(+Until)
 %	    FIXME: OAI attributes; what do they do?
@@ -130,28 +135,53 @@ on_metadata(ServerURL, DB, XML) :-
 %	resumption-token.
 
 oai_crawl(Server, File, Options) :-
-	select_option(resumption_count(Count), Options, Options1, -1),
+	option(split(_), Options), !,
+	oai_crawl_splitted(1, Server, File, Options).
+oai_crawl(Server, File, Options) :-
 	setup_call_cleanup(open(File, write, Out, [encoding(utf8)]),
-			   fetch_record_loop(Count, Server, Out, Options1),
+			   fetch_record_loop(0, Server, Out, Options, _),
 			   close(Out)).
 
-fetch_record_loop(0, _, _, _) :- !.
-fetch_record_loop(Count, Server, Out, Options) :-
+oai_crawl_splitted(I, Server, Base, Options) :-
+	format(atom(File), '~w-~|~`0t~d~4+.ttl', [Base, I]),
+	setup_call_cleanup(open(File, write, Out, [encoding(utf8)]),
+			   fetch_record_loop(0, Server, Out, Options, NextToken),
+			   close(Out)),
+	(   NextToken == (-)
+	->  true
+	;   I2 is I + 1,
+	    oai_crawl_splitted(I2, Server, Base,
+			       [ resumptionToken(NextToken)
+			       | Options
+			       ])
+	).
+
+
+fetch_record_loop(Count, _, _, Options, -) :-
+	option(resumption_count(Count), Options), !.
+fetch_record_loop(I, _, Out, Options, NextToken) :-
+	I > 0,
+	option(split(Size), Options),
+	byte_count(Out, CurrentSize),
+	(I+1)*CurrentSize/I > Size, !,
+	option(resumptionToken(NextToken), Options, -).
+fetch_record_loop(RCount, Server, Out, Options, FinalToken) :-
 	rdf_retractall(_,_,_,oai_crawler),
+	select_option(split(_), Options, RecOptions, -),
 	retry_oai_records(1, Server, oai_crawler,
 			  [ next_resumption_token(NextToken)
-			  | Options
+			  | RecOptions
 			  ]),
 	comment(Out, Options, Options1),
 	rdf_save_turtle(Out, [ graph(oai_crawler) ]),
 	flush_output(Out),
 	(   NextToken == []
 	->  true
-	;   C2 is Count - 1,
-	    fetch_record_loop(C2, Server, Out,
+	;   RC2 is RCount + 1,
+	    fetch_record_loop(RC2, Server, Out,
 			      [ resumptionToken(NextToken)
 			      | Options1
-			      ])
+			      ], FinalToken)
 	).
 
 
