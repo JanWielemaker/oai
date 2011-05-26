@@ -77,13 +77,27 @@ handle_content_parts([Elem|T], E, Handler, RT0, RT) :-
 	call(Handler, Elem),
 	handle_content_parts(T, E, Handler, RT0, RT).
 handle_content_parts([element(_:resumptionToken,RA,RC)|T], E, H, _, RT) :-
-	debug(oai, 'Read resumptiontoken: ~q ~q', [RA, RC]),
 	resumption_token(RA, RC, RT1), !,
 	handle_content_parts(T, E, H, RT1, RT).
 handle_content_parts([Error|T], E, H, RT0, RT) :-
 	print_message(warning, oai(skipped(Error))),
 	handle_content_parts(T, E, H, RT0, RT).
 
+:- dynamic
+	token/3.				% Token, Attrs, Time
+
+resumption_token(Attrs, Tokens, _) :-
+	debug(oai, 'Read resumptiontoken: ~q ~q', [Attrs, Tokens]),
+	Tokens = [Token],
+	get_time(Time),
+	(   token(Token, Attrs0, Time0)
+	->  debug(oai(duplicate),
+		  'Duplicate token: ~q (Attrs = ~q/~q, Time = ~q/~q',
+		  [ Token, Attrs0, Attrs, Time0, Time ])
+	;   true
+	),
+	assertz(token(Token, Attrs, Time)),
+	fail.					% proceed to next clause.
 resumption_token(_, [Token], Token).
 resumption_token(_, [], []).
 
