@@ -51,7 +51,8 @@ request(ParsedURL, Verb, Handler, Options0) :-
 	    sub_term(Elem, XML)
 	->  handle_content(Elem, Verb, Handler, ResumptionToken),
 	    (	ReturnToken == true
-	    ->	Token = ResumptionToken
+	    ->	debug(oai, 'oai_request/4: next token = ~q', [ResumptionToken]),
+	        Token = ResumptionToken
 	    ;	ResumptionToken \== [], Resume \== false
 	    ->	resumption_url(ParsedURL, ResumptionToken, ResumeURL),
 		request(ResumeURL, Verb, Handler, Options)

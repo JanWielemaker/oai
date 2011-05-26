@@ -144,16 +144,15 @@ oai_crawl(Server, File, Options) :-
 
 oai_crawl_splitted(I, Server, Base, Options) :-
 	format(atom(File), '~w-~|~`0t~d~4+.ttl', [Base, I]),
+	debug(oai, 'Starting slitted dataset ~q', [File]),
 	setup_call_cleanup(open(File, write, Out, [encoding(utf8)]),
 			   fetch_record_loop(0, Server, Out, Options, NextToken),
 			   close(Out)),
 	(   NextToken == (-)
 	->  true
 	;   I2 is I + 1,
-	    oai_crawl_splitted(I2, Server, Base,
-			       [ resumptionToken(NextToken)
-			       | Options
-			       ])
+	    merge_options([resumptionToken(NextToken)], Options, Options1),
+	    oai_crawl_splitted(I2, Server, Base, Options1)
 	).
 
 
@@ -168,6 +167,7 @@ fetch_record_loop(I, _, Out, Options, NextToken) :-
 fetch_record_loop(RCount, Server, Out, Options, FinalToken) :-
 	rdf_retractall(_,_,_,oai_crawler),
 	select_option(split(_), Options, RecOptions, -),
+	assertion(\+option(next_resumption_token(_), RecOptions)),
 	retry_oai_records(1, Server, oai_crawler,
 			  [ next_resumption_token(NextToken)
 			  | RecOptions
@@ -178,10 +178,10 @@ fetch_record_loop(RCount, Server, Out, Options, FinalToken) :-
 	(   NextToken == []
 	->  true
 	;   RC2 is RCount + 1,
-	    fetch_record_loop(RC2, Server, Out,
-			      [ resumptionToken(NextToken)
-			      | Options1
-			      ], FinalToken)
+	    merge_options([resumptionToken(NextToken)],
+			  Options1,
+			  Options2),
+	    fetch_record_loop(RC2, Server, Out, Options2, FinalToken)
 	).
 
 
@@ -192,7 +192,8 @@ retry_oai_records(Try, Server, DB, Options) :-
 
 	(   catch(oai_records(Server, DB, Options3), E, true),
 	    (   var(E)
-	    ->	true
+	    ->	option(next_resumption_token(NRT), Options3, -),
+		debug(oai, 'retry_oai_records/4: NRT=~q', [NRT])
 	    ;	report_error(E),
 		fail
 	    )
