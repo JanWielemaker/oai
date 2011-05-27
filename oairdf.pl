@@ -176,7 +176,7 @@ fetch_record_loop(RCount, Server, Out, Options, FinalToken) :-
 	rdf_save_turtle(Out, [ graph(oai_crawler) ]),
 	flush_output(Out),
 	(   NextToken == []
-	->  true
+	->  FinalToken = (-)
 	;   RC2 is RCount + 1,
 	    merge_options([resumptionToken(NextToken)],
 			  Options1,
