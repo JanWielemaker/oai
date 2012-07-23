@@ -15,3 +15,5 @@ oai_server(svcn,     'http://62.221.199.220:26006/').
 oai_server(scran,    'http://www.scran.ac.uk/xmlrpc/oai/oai2.php').
 oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 oai_server(stabi,    'http://digital.staatsbibliothek-berlin.de/oai/').
+oai_server(beng,     'http://openskos.beeldengeluid.nl/oai-pmh').
+oai_server(openskos, 'http://openskos.org/oai-pmh').
