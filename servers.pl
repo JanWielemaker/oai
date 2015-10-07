@@ -17,3 +17,4 @@ oai_server(dismarc,  'http://www.dismarc.org/oai/index.php').
 oai_server(stabi,    'http://digital.staatsbibliothek-berlin.de/oai/').
 oai_server(beng,     'http://openskos.beeldengeluid.nl/oai-pmh').
 oai_server(openskos, 'http://openskos.org/oai-pmh').
+oai_server(rma,	     'https://www.rijksmuseum.nl/api2/oai/8zmxuaJ2').
