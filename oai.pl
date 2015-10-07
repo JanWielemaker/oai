@@ -2,8 +2,8 @@
 	  [ oai_request/4,		% +Server, +Verb, :Handler, +Options
 	    oai_server_address/2	% +Id, -URL
 	  ]).
-:- use_module(library(http/http_client)).
-:- use_module(library(http/http_sgml_plugin)).
+:- use_module(library(http/http_open)).
+:- use_module(library(sgml)).
 :- use_module(library(debug)).
 :- use_module(library(option)).
 :- use_module(library(lists)).
@@ -35,17 +35,19 @@
 
 oai_request(Server, Verb, Handler, Options) :-
 	oai_attributes(Options, Fields, RestOptions),
-	make_url(Server, Verb, Fields, ParsedURL),
-	request(ParsedURL, Verb, Handler, RestOptions).
+	make_url(Server, Verb, Fields, URL),
+	request(URL, Verb, Handler, RestOptions).
 
-request(ParsedURL, Verb, Handler, Options0) :-
+request(URL, Verb, Handler, Options0) :-
 	(   select_option(next_resumption_token(Token), Options0, Options)
 	->  ReturnToken = true
 	;   select_option(resume(Resume), Options0, Options, true)
 	),
-	parse_url(FullURL, ParsedURL),
-	debug(oai, 'Opening ~w ...', [FullURL]),
-	http_get(ParsedURL, XML, [space(remove)|Options]),
+	debug(oai, 'Opening ~w ...', [URL]),
+	setup_call_cleanup(
+		http_open(URL, In, Options),
+		load_xml(In, XML, [space(remove),dialect(xmlns)]),
+		close(In)),
 	debug(oai, 'Processing reply ...', []),
 	(   Elem = element(_:Verb, _, _),
 	    sub_term(Elem, XML)
@@ -54,7 +56,7 @@ request(ParsedURL, Verb, Handler, Options0) :-
 	    ->	debug(oai, 'oai_request/4: next token = ~q', [ResumptionToken]),
 	        Token = ResumptionToken
 	    ;	ResumptionToken \== [], Resume \== false
-	    ->	resumption_url(ParsedURL, ResumptionToken, ResumeURL),
+	    ->	resumption_url(URL, ResumptionToken, ResumeURL),
 		request(ResumeURL, Verb, Handler, Options)
 	    ;	true
 	    )
@@ -112,19 +114,22 @@ match_element(element(E, _, _), E).
 
 %%	make_url(+Server, +Verb, +ExtraFields, -ParsedURL)
 
-make_url(Server, Verb, Fields, All) :-
+make_url(Server, Verb, Fields, URL) :-
 	oai_server_address(Server, BaseURL),
 	parse_url(BaseURL, Parts),
 	All = [ search([ verb = Verb
 		       | Fields
 		       ])
 	      | Parts
-	      ].
+	      ],
+	parse_url(URL, All).
 
 oai_server_address(Name, Server) :-
 	oai_server(Name, Server), !.
 oai_server_address(Server, Server) :-
 	sub_atom(Server, 0, _, _, 'http://'), !.
+oai_server_address(Server, Server) :-
+	sub_atom(Server, 0, _, _, 'https://'), !.
 oai_server_address(Server, _) :-
 	throw(error(existence_error(server, Server), _)).
 
@@ -132,13 +137,14 @@ oai_server_address(Server, _) :-
 %
 %	Replace or add the resumptionToken argument of the URL.
 
-resumption_url(ParsedURL, ResumptionToken, NewURL) :-
+resumption_url(URL, ResumptionToken, NewURL) :-
+	parse_url(URL, ParsedURL),
 	selectchk(search(Search0), ParsedURL, URL1),
 	memberchk(verb=Verb, Search0),
 	Search = [ resumptionToken = ResumptionToken,
 		   verb = Verb
 		 ],
-	NewURL = [search(Search)|URL1].
+	parse_url(NewURL, [search(Search)|URL1]).
 
 
 		 /*******************************
