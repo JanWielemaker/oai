@@ -26,7 +26,7 @@
 	rdf_load(ontology('rdfs')),
 	rdf_load(ontology(dc)),
 	rdf_load(ontology(dcterms)),
-	rdf_load(ontology(dctypes)),
+	rdf_load(ontology(dctype)),
 	rdf_load('oai.ttl').
 
 /** <module> Fetch data from an OAI server into an RDF database
