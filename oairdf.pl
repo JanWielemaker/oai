@@ -11,6 +11,7 @@
 	  ]).
 :- use_module(oai).
 :- use_module(xmlrdf).
+:- use_module(library(rdf)).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_turtle)).
@@ -288,6 +289,15 @@ oai_records(ServerId, DB, Options0) :-
 		    on_record(ServerURL, DB), Options),
 	broadcast(triple20(refresh)).
 
+on_record(_ServerURL, DB,
+	  element(_, _, [ element(_:header, _HdrAtt, _HDR)
+			,  element(_:metadata, _, [Content])
+			])) :-
+	% see if obtained data is rdf
+	check_rdf_xml(Content), !,
+	xml_to_rdf(Content, Triples, []),
+	maplist(rdf_assert_tripple(DB), Triples).
+
 on_record(ServerURL, DB,
 	  element(_, _, [ element(_:header, _HdrAtt, HDR)
 			| Content
@@ -304,6 +314,11 @@ on_record(ServerURL, DB,
 	),
 	forall(element(metadata, Content, element(_, _, [MD])),
 	       xmldom_rdf_properties(URL, MD, [graph(DB)])).
+
+check_rdf_xml(element(_:'RDF',_,_)).
+
+rdf_assert_tripple(Graph, rdf(Subject, Predicate, Object)) :-
+	rdf_assert(Subject, Predicate, Object, Graph).
 
 element(Name, Content, Element) :-
 	member(Element, Content),
